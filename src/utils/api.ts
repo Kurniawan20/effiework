@@ -1,13 +1,13 @@
 // API Utility functions for authentication and API requests
 
 // Type Imports
-import { 
-  AssetCategory, 
-  AssetCreateRequest, 
-  AssetListParams, 
-  AssetResponse, 
+import type {
+  AssetCategory,
+  AssetCreateRequest,
+  AssetListParams,
+  AssetResponse,
   AssetLocation,
-  Department, 
+  Department,
   User,
   UserListParams,
   UserListResponse,
@@ -19,12 +19,12 @@ import {
   Branch,
   BranchCreateRequest,
   BranchUpdateRequest
-} from '@/types/assets';
+} from '@/types/assets'
 
 /**
  * Base URL for API requests
  */
-export const API_BASE_URL = 'http://localhost:8083/api';
+export const API_BASE_URL = 'http://123.176.120.84:8083/api'
 
 /**
  * Get the authentication token from localStorage
@@ -32,87 +32,94 @@ export const API_BASE_URL = 'http://localhost:8083/api';
 export const getToken = (): string | null => {
   if (typeof window !== 'undefined') {
     try {
-      const token = localStorage.getItem('accessToken');
-      
+      const token = localStorage.getItem('accessToken')
+
       // Add debug log to help troubleshoot token issues
       if (!token) {
-        console.warn('No authentication token found in localStorage');
-        
+        console.warn('No authentication token found in localStorage')
+
         // Try to get token from session storage as fallback
-        const sessionToken = sessionStorage.getItem('accessToken');
+        const sessionToken = sessionStorage.getItem('accessToken')
+
         if (sessionToken) {
-          console.log('Found token in sessionStorage, using it and syncing to localStorage');
-          localStorage.setItem('accessToken', sessionToken);
-          return sessionToken;
+          console.log('Found token in sessionStorage, using it and syncing to localStorage')
+          localStorage.setItem('accessToken', sessionToken)
+
+          return sessionToken
         }
       } else {
-        console.log('Token found in localStorage');
+        console.log('Token found in localStorage')
       }
-      
-      return token;
+
+      return token
     } catch (error) {
-      console.error('Error accessing localStorage:', error);
-      return null;
+      console.error('Error accessing localStorage:', error)
+
+      return null
     }
   }
-  return null;
-};
+
+  return null
+}
 
 /**
  * Set the authentication token in localStorage
  */
 export const setToken = (token: string): void => {
   if (typeof window !== 'undefined') {
-    localStorage.setItem('accessToken', token);
-    console.log('Authentication token set in localStorage');
+    localStorage.setItem('accessToken', token)
+    console.log('Authentication token set in localStorage')
   }
-};
+}
 
 /**
  * Clear the authentication token from localStorage
  */
 export const clearToken = (): void => {
   if (typeof window !== 'undefined') {
-    localStorage.removeItem('accessToken');
+    localStorage.removeItem('accessToken')
   }
-};
+}
 
 /**
  * Check if a user is authenticated
  */
 export const isAuthenticated = (): boolean => {
-  return !!getToken();
-};
+  return !!getToken()
+}
 
 /**
  * Check if a user is authenticated with a valid token
  */
 export const hasValidToken = (): boolean => {
-  const token = getToken();
-  return !!token && token.length > 10; // Basic validation that token exists and has reasonable length
-};
+  const token = getToken()
+
+  return !!token && token.length > 10 // Basic validation that token exists and has reasonable length
+}
 
 /**
  * Default headers for API requests
  */
 export const getHeaders = (includeAuth: boolean = true): HeadersInit => {
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
+    'Content-Type': 'application/json'
+  }
 
   if (includeAuth) {
-    const token = getToken();
+    const token = getToken()
+
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      headers['Authorization'] = `Bearer ${token}`
+
       // Add debug log to confirm token is being added to headers
-      console.log('Adding authorization header with token');
+      console.log('Adding authorization header with token')
     } else {
-      console.warn('Authorization header not added - no token available');
+      console.warn('Authorization header not added - no token available')
     }
   }
 
-  return headers;
-};
+  return headers
+}
 
 /**
  * Handle API responses and errors
@@ -122,26 +129,27 @@ export const handleApiResponse = async (response: Response) => {
     // Handle different error status codes appropriately
     if (response.status === 401) {
       // Clear token on unauthorized access
-      clearToken();
-      
+      clearToken()
+
       // Only redirect to login page if explicitly logged out or token expired
       // This prevents unwanted redirects during form submissions
       if (typeof window !== 'undefined' && response.url.includes('/auth/')) {
-        window.location.href = '/login';
+        window.location.href = '/login'
       }
     }
-    
+
     // Try to parse error response
     try {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'An error occurred');
+      const errorData = await response.json()
+
+      throw new Error(errorData.message || 'An error occurred')
     } catch (e) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      throw new Error(`API Error: ${response.status} ${response.statusText}`)
     }
   }
-  
-  return response.json();
-};
+
+  return response.json()
+}
 
 /**
  * Generic function to make API requests
@@ -152,89 +160,91 @@ export const apiRequest = async (
   data: any = null,
   requireAuth: boolean = true
 ) => {
-  const url = `${API_BASE_URL}${endpoint}`;
-  
+  const url = `${API_BASE_URL}${endpoint}`
+
   // Check authentication before making request if required
   if (requireAuth && !hasValidToken()) {
-    console.error('Authentication required but no valid token available');
-    throw new Error('Authentication required. Please log in again.');
+    console.error('Authentication required but no valid token available')
+    throw new Error('Authentication required. Please log in again.')
   }
-  
+
   const options: RequestInit = {
     method,
-    headers: getHeaders(requireAuth),
-  };
-  
+    headers: getHeaders(requireAuth)
+  }
+
   if (data && ['POST', 'PUT', 'PATCH'].includes(method)) {
-    options.body = JSON.stringify(data);
+    options.body = JSON.stringify(data)
   }
-  
+
   try {
-    console.log(`Making ${method} request to ${endpoint} with auth: ${requireAuth}`);
-    const response = await fetch(url, options);
-    return handleApiResponse(response);
+    console.log(`Making ${method} request to ${endpoint} with auth: ${requireAuth}`)
+    const response = await fetch(url, options)
+
+    return handleApiResponse(response)
   } catch (error) {
-    console.error('API Request Error:', error);
-    throw error;
+    console.error('API Request Error:', error)
+    throw error
   }
-};
+}
 
 /**
  * Authentication API functions
  */
 export const authApi = {
   login: async (username: string, password: string) => {
-    return apiRequest('/auth/login', 'POST', { username, password }, false);
+    return apiRequest('/auth/login', 'POST', { username, password }, false)
   },
-  
+
   logout: async () => {
-    clearToken();
+    clearToken()
+
     // You might want to call a logout endpoint here if your API has one
     // return apiRequest('/auth/logout', 'POST');
   },
-  
+
   getCurrentUser: async () => {
-    return apiRequest('/auth/me', 'GET');
+    return apiRequest('/auth/me', 'GET')
   }
-};
+}
 
 /**
  * Interface for Asset API requests
  */
 export interface AssetCreateRequest {
-  assetCode: string;
-  name: string;
-  description: string;
-  categoryId: number;
-  locationId: number;
-  departmentId: number;
-  branchId: number;
-  purchaseDate: string;
-  purchaseCost: number;
-  status: string;
+  assetCode: string
+  name: string
+  description: string
+  categoryId: number
+  locationId: number
+  departmentId: number
+  branchId: number
+  purchaseDate: string
+  purchaseCost: number
+  status: string
 }
 
 /**
  * Interface for Asset API responses
  */
 export interface AssetResponse {
-  id: number;
-  assetCode: string;
-  name: string;
-  description?: string;
-  categoryId: number;
-  categoryName: string;
-  locationId: number;
-  locationName: string;
-  departmentId: number;
-  departmentName: string;
-  branchId: number;
-  branchName: string;
-  purchaseDate: string;
-  purchaseCost: number;
-  status: string;
-  currentAssignedUserId?: number | null;
-  currentAssignedUsername?: string | null;
+  id: number
+  assetCode: string
+  name: string
+  description?: string
+  categoryId: number
+  categoryName: string
+  locationId: number
+  locationName: string
+  departmentId: number
+  departmentName: string
+  branchId: number
+  branchName: string
+  purchaseDate: string
+  purchaseCost: number
+  status: string
+  currentAssignedUserId?: number | null
+  currentAssignedUsername?: string | null
 }
 
 /**
@@ -245,47 +255,48 @@ export const assetApi = {
    * Create a new asset
    */
   createAsset: async (assetData: AssetCreateRequest): Promise<AssetResponse> => {
-    return apiRequest('/assets', 'POST', assetData);
+    return apiRequest('/assets', 'POST', assetData)
   },
-  
+
   /**
    * Get all assets with pagination and filtering
    */
   getAssets: async (params: AssetListParams = {}): Promise<PaginatedResponse<AssetResponse>> => {
     // Build query string from params
-    const queryParams = new URLSearchParams();
-    
+    const queryParams = new URLSearchParams()
+
     // Add pagination params
-    if (params.page !== undefined) queryParams.append('page', params.page.toString());
-    if (params.size !== undefined) queryParams.append('size', params.size.toString());
-    
+    if (params.page !== undefined) queryParams.append('page', params.page.toString())
+    if (params.size !== undefined) queryParams.append('size', params.size.toString())
+
     // Add filter params
-    if (params.status) queryParams.append('status', params.status);
-    if (params.categoryId) queryParams.append('categoryId', params.categoryId.toString());
-    if (params.departmentId) queryParams.append('departmentId', params.departmentId.toString());
-    if (params.search) queryParams.append('search', params.search);
-    
-    const queryString = queryParams.toString();
-    const endpoint = `/assets/my-assets${queryString ? `?${queryString}` : ''}`;
-    
-    console.log(`Fetching assets with params: ${JSON.stringify(params)}`);
-    return apiRequest(endpoint, 'GET');
+    if (params.status) queryParams.append('status', params.status)
+    if (params.categoryId) queryParams.append('categoryId', params.categoryId.toString())
+    if (params.departmentId) queryParams.append('departmentId', params.departmentId.toString())
+    if (params.search) queryParams.append('search', params.search)
+
+    const queryString = queryParams.toString()
+    const endpoint = `/assets/my-assets${queryString ? `?${queryString}` : ''}`
+
+    console.log(`Fetching assets with params: ${JSON.stringify(params)}`)
+
+    return apiRequest(endpoint, 'GET')
   },
-  
+
   /**
    * Get a single asset by ID
    */
   getAssetById: async (id: number): Promise<AssetResponse> => {
-    return apiRequest(`/assets/${id}`, 'GET');
+    return apiRequest(`/assets/${id}`, 'GET')
   },
-  
+
   /**
    * Update an asset
    */
   updateAsset: async (id: number, assetData: Partial<AssetCreateRequest>): Promise<AssetResponse> => {
-    return apiRequest(`/assets/${id}`, 'PUT', assetData);
+    return apiRequest(`/assets/${id}`, 'PUT', assetData)
   },
-  
+
   /**
    * Delete an asset
    */
@@ -300,10 +311,11 @@ export const assetApi = {
 
     if (!response.ok) {
       const errorData = await response.json()
+
       throw new Error(errorData.message || 'Failed to delete asset')
     }
   },
-  
+
   /**
    * Assign an asset to a user
    */
@@ -318,12 +330,13 @@ export const assetApi = {
 
     if (!response.ok) {
       const errorData = await response.json()
+
       throw new Error(errorData.message || 'Failed to assign asset')
     }
 
     return response.json()
   },
-  
+
   /**
    * Unassign an asset from a user
    */
@@ -338,6 +351,7 @@ export const assetApi = {
 
     if (!response.ok) {
       const errorData = await response.json()
+
       throw new Error(errorData.message || 'Failed to unassign asset')
     }
 
@@ -363,6 +377,7 @@ export const categoryApi = {
 
     if (!response.ok) {
       const errorData = await response.json()
+
       throw new Error(errorData.message || 'Failed to fetch categories')
     }
 
@@ -383,6 +398,7 @@ export const categoryApi = {
 
     if (!response.ok) {
       const errorData = await response.json()
+
       throw new Error(errorData.message || 'Failed to fetch category details')
     }
 
@@ -392,7 +408,7 @@ export const categoryApi = {
   /**
    * Create a new category
    */
-  createCategory: async (data: { name: string, description?: string }): Promise<AssetCategory> => {
+  createCategory: async (data: { name: string; description?: string }): Promise<AssetCategory> => {
     const response = await fetch(`${API_BASE_URL}/categories`, {
       method: 'POST',
       headers: {
@@ -404,6 +420,7 @@ export const categoryApi = {
 
     if (!response.ok) {
       const errorData = await response.json()
+
       throw new Error(errorData.message || 'Failed to create category')
     }
 
@@ -413,7 +430,7 @@ export const categoryApi = {
   /**
    * Update an existing category
    */
-  updateCategory: async (id: number, data: { name: string, description?: string }): Promise<AssetCategory> => {
+  updateCategory: async (id: number, data: { name: string; description?: string }): Promise<AssetCategory> => {
     const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
       method: 'PUT',
       headers: {
@@ -425,6 +442,7 @@ export const categoryApi = {
 
     if (!response.ok) {
       const errorData = await response.json()
+
       throw new Error(errorData.message || 'Failed to update category')
     }
 
@@ -445,6 +463,7 @@ export const categoryApi = {
 
     if (!response.ok) {
       const errorData = await response.json()
+
       throw new Error(errorData.message || 'Failed to delete category')
     }
   }
@@ -468,6 +487,7 @@ export const locationApi = {
 
     if (!response.ok) {
       const errorData = await response.json()
+
       throw new Error(errorData.message || 'Failed to fetch locations')
     }
 
@@ -488,6 +508,7 @@ export const locationApi = {
 
     if (!response.ok) {
       const errorData = await response.json()
+
       throw new Error(errorData.message || 'Failed to fetch root locations')
     }
 
@@ -508,6 +529,7 @@ export const locationApi = {
 
     if (!response.ok) {
       const errorData = await response.json()
+
       throw new Error(errorData.message || 'Failed to fetch location')
     }
 
@@ -529,6 +551,7 @@ export const locationApi = {
 
     if (!response.ok) {
       const errorData = await response.json()
+
       throw new Error(errorData.message || 'Failed to create location')
     }
 
@@ -538,7 +561,10 @@ export const locationApi = {
   /**
    * Update an existing location
    */
-  updateLocation: async (id: number, data: Partial<Omit<AssetLocation, 'id' | 'createdAt' | 'updatedAt'>>): Promise<AssetLocation> => {
+  updateLocation: async (
+    id: number,
+    data: Partial<Omit<AssetLocation, 'id' | 'createdAt' | 'updatedAt'>>
+  ): Promise<AssetLocation> => {
     const response = await fetch(`${API_BASE_URL}/locations/${id}`, {
       method: 'PUT',
       headers: {
@@ -550,6 +576,7 @@ export const locationApi = {
 
     if (!response.ok) {
       const errorData = await response.json()
+
       throw new Error(errorData.message || 'Failed to update location')
     }
 
@@ -570,6 +597,7 @@ export const locationApi = {
 
     if (!response.ok) {
       const errorData = await response.json()
+
       throw new Error(errorData.message || 'Failed to delete location')
     }
   }
@@ -593,6 +621,7 @@ export const departmentApi = {
 
     if (!response.ok) {
       const errorData = await response.json()
+
       throw new Error(errorData.message || 'Failed to fetch departments')
     }
 
@@ -613,6 +642,7 @@ export const departmentApi = {
 
     if (!response.ok) {
       const errorData = await response.json()
+
       throw new Error(errorData.message || 'Failed to fetch department')
     }
 
@@ -634,6 +664,7 @@ export const departmentApi = {
 
     if (!response.ok) {
       const errorData = await response.json()
+
       throw new Error(errorData.message || 'Failed to create department')
     }
 
@@ -643,7 +674,10 @@ export const departmentApi = {
   /**
    * Update an existing department
    */
-  updateDepartment: async (id: number, data: Omit<Department, 'id' | 'createdAt' | 'updatedAt'>): Promise<Department> => {
+  updateDepartment: async (
+    id: number,
+    data: Omit<Department, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<Department> => {
     const response = await fetch(`${API_BASE_URL}/departments/${id}`, {
       method: 'PUT',
       headers: {
@@ -655,6 +689,7 @@ export const departmentApi = {
 
     if (!response.ok) {
       const errorData = await response.json()
+
       throw new Error(errorData.message || 'Failed to update department')
     }
 
@@ -675,6 +710,7 @@ export const departmentApi = {
 
     if (!response.ok) {
       const errorData = await response.json()
+
       throw new Error(errorData.message || 'Failed to delete department')
     }
   }
@@ -690,22 +726,22 @@ export const userApi = {
   getUsers: async (params: UserListParams): Promise<UserListResponse> => {
     // Build query string from params
     const queryParams = new URLSearchParams()
-    
+
     if (params.page !== undefined) {
       queryParams.append('page', params.page.toString())
     }
-    
+
     if (params.size !== undefined) {
       queryParams.append('size', params.size.toString())
     }
-    
+
     if (params.search) {
       queryParams.append('search', params.search)
     }
-    
+
     const queryString = queryParams.toString()
     const url = `${API_BASE_URL}/users${queryString ? `?${queryString}` : ''}`
-    
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -716,12 +752,13 @@ export const userApi = {
 
     if (!response.ok) {
       const errorData = await response.json()
+
       throw new Error(errorData.message || 'Failed to fetch users')
     }
 
     return response.json()
   },
-  
+
   /**
    * Get user by ID
    */
@@ -736,6 +773,7 @@ export const userApi = {
 
     if (!response.ok) {
       const errorData = await response.json()
+
       throw new Error(errorData.message || 'Failed to fetch user details')
     }
 
@@ -756,16 +794,16 @@ export const foodManagementApi = {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${getToken()}`
         }
-      });
+      })
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch ingredients: ${response.status}`);
+        throw new Error(`Failed to fetch ingredients: ${response.status}`)
       }
 
-      return await response.json();
+      return await response.json()
     } catch (error) {
-      console.error('Error fetching ingredients:', error);
-      throw error;
+      console.error('Error fetching ingredients:', error)
+      throw error
     }
   },
 
@@ -777,16 +815,16 @@ export const foodManagementApi = {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${getToken()}`
         }
-      });
+      })
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch ingredient: ${response.status}`);
+        throw new Error(`Failed to fetch ingredient: ${response.status}`)
       }
 
-      return await response.json();
+      return await response.json()
     } catch (error) {
-      console.error(`Error fetching ingredient with id ${id}:`, error);
-      throw error;
+      console.error(`Error fetching ingredient with id ${id}:`, error)
+      throw error
     }
   },
 
@@ -796,19 +834,19 @@ export const foodManagementApi = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${getToken()}`,
+          Authorization: `Bearer ${getToken()}`
         },
         body: JSON.stringify(data)
-      });
+      })
 
       if (!response.ok) {
-        throw new Error(`Failed to create ingredient: ${response.status}`);
+        throw new Error(`Failed to create ingredient: ${response.status}`)
       }
 
-      return await response.json();
+      return await response.json()
     } catch (error) {
-      console.error('Error creating ingredient:', error);
-      throw error;
+      console.error('Error creating ingredient:', error)
+      throw error
     }
   },
 
@@ -818,19 +856,19 @@ export const foodManagementApi = {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${getToken()}`,
+          Authorization: `Bearer ${getToken()}`
         },
         body: JSON.stringify(data)
-      });
+      })
 
       if (!response.ok) {
-        throw new Error(`Failed to update ingredient: ${response.status}`);
+        throw new Error(`Failed to update ingredient: ${response.status}`)
       }
 
-      return await response.json();
+      return await response.json()
     } catch (error) {
-      console.error(`Error updating ingredient with id ${id}:`, error);
-      throw error;
+      console.error(`Error updating ingredient with id ${id}:`, error)
+      throw error
     }
   },
 
@@ -840,16 +878,16 @@ export const foodManagementApi = {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${getToken()}`,
+          Authorization: `Bearer ${getToken()}`
         }
-      });
+      })
 
       if (!response.ok) {
-        throw new Error(`Failed to delete ingredient: ${response.status}`);
+        throw new Error(`Failed to delete ingredient: ${response.status}`)
       }
     } catch (error) {
-      console.error(`Error deleting ingredient with id ${id}:`, error);
-      throw error;
+      console.error(`Error deleting ingredient with id ${id}:`, error)
+      throw error
     }
   },
 
@@ -862,16 +900,16 @@ export const foodManagementApi = {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${getToken()}`
         }
-      });
+      })
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch menu items: ${response.status}`);
+        throw new Error(`Failed to fetch menu items: ${response.status}`)
       }
 
-      return await response.json();
+      return await response.json()
     } catch (error) {
-      console.error('Error fetching menu items:', error);
-      throw error;
+      console.error('Error fetching menu items:', error)
+      throw error
     }
   },
 
@@ -883,16 +921,16 @@ export const foodManagementApi = {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${getToken()}`
         }
-      });
+      })
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch menu item: ${response.status}`);
+        throw new Error(`Failed to fetch menu item: ${response.status}`)
       }
 
-      return await response.json();
+      return await response.json()
     } catch (error) {
-      console.error(`Error fetching menu item with id ${id}:`, error);
-      throw error;
+      console.error(`Error fetching menu item with id ${id}:`, error)
+      throw error
     }
   },
 
@@ -902,19 +940,19 @@ export const foodManagementApi = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${getToken()}`,
+          Authorization: `Bearer ${getToken()}`
         },
         body: JSON.stringify(data)
-      });
+      })
 
       if (!response.ok) {
-        throw new Error(`Failed to create menu item: ${response.status}`);
+        throw new Error(`Failed to create menu item: ${response.status}`)
       }
 
-      return await response.json();
+      return await response.json()
     } catch (error) {
-      console.error('Error creating menu item:', error);
-      throw error;
+      console.error('Error creating menu item:', error)
+      throw error
     }
   },
 
@@ -924,19 +962,19 @@ export const foodManagementApi = {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${getToken()}`,
+          Authorization: `Bearer ${getToken()}`
         },
         body: JSON.stringify(data)
-      });
+      })
 
       if (!response.ok) {
-        throw new Error(`Failed to update menu item: ${response.status}`);
+        throw new Error(`Failed to update menu item: ${response.status}`)
       }
 
-      return await response.json();
+      return await response.json()
     } catch (error) {
-      console.error(`Error updating menu item with id ${id}:`, error);
-      throw error;
+      console.error(`Error updating menu item with id ${id}:`, error)
+      throw error
     }
   },
 
@@ -946,41 +984,44 @@ export const foodManagementApi = {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${getToken()}`,
+          Authorization: `Bearer ${getToken()}`
         }
-      });
+      })
 
       if (!response.ok) {
-        throw new Error(`Failed to delete menu item: ${response.status}`);
+        throw new Error(`Failed to delete menu item: ${response.status}`)
       }
     } catch (error) {
-      console.error(`Error deleting menu item with id ${id}:`, error);
-      throw error;
+      console.error(`Error deleting menu item with id ${id}:`, error)
+      throw error
     }
   },
 
   // Assets for Food
   async getAvailableAssetsForFood(search = '', page = 0, size = 10, sort = 'name,asc'): Promise<any> {
     try {
-      const response = await fetch(`${API_BASE_URL}/assets/available-for-food?search=${encodeURIComponent(search)}&page=${page}&size=${size}&sort=${sort}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${getToken()}`
+      const response = await fetch(
+        `${API_BASE_URL}/assets/available-for-food?search=${encodeURIComponent(search)}&page=${page}&size=${size}&sort=${sort}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${getToken()}`
+          }
         }
-      });
+      )
 
       if (!response.ok) {
-        throw new Error(`Error fetching available assets for food: ${response.status}`);
+        throw new Error(`Error fetching available assets for food: ${response.status}`)
       }
 
-      return await response.json();
+      return await response.json()
     } catch (error) {
-      console.error('Failed to fetch available assets for food:', error);
-      throw error;
+      console.error('Failed to fetch available assets for food:', error)
+      throw error
     }
   }
-};
+}
 
 /**
  * Food API
@@ -990,9 +1031,9 @@ export const foodApi = {
    * Get menu item details by ID
    */
   getMenuItem: async (id: number): Promise<MenuItemDetail> => {
-    return apiRequest(`/food/menu-items/${id}`, 'GET');
-  },
-};
+    return apiRequest(`/food/menu-items/${id}`, 'GET')
+  }
+}
 
 /**
  * Branch Management API
@@ -1002,54 +1043,54 @@ export const branchApi = {
    * Get branches with pagination and filtering
    */
   getBranches: async (params: {
-    name?: string;
-    isActive?: boolean;
-    page?: number;
-    size?: number;
-    sort?: string;
+    name?: string
+    isActive?: boolean
+    page?: number
+    size?: number
+    sort?: string
   }): Promise<PaginatedResponse<Branch>> => {
-    const queryParams = new URLSearchParams();
-    
-    if (params.name !== undefined) queryParams.append('name', params.name);
-    if (params.isActive !== undefined) queryParams.append('isActive', params.isActive.toString());
-    if (params.page !== undefined) queryParams.append('page', params.page.toString());
-    if (params.size !== undefined) queryParams.append('size', params.size.toString());
-    if (params.sort !== undefined) queryParams.append('sort', params.sort);
-    
-    const queryString = queryParams.toString();
-    const endpoint = `/branches${queryString ? `?${queryString}` : ''}`;
-    
-    return apiRequest(endpoint, 'GET');
+    const queryParams = new URLSearchParams()
+
+    if (params.name !== undefined) queryParams.append('name', params.name)
+    if (params.isActive !== undefined) queryParams.append('isActive', params.isActive.toString())
+    if (params.page !== undefined) queryParams.append('page', params.page.toString())
+    if (params.size !== undefined) queryParams.append('size', params.size.toString())
+    if (params.sort !== undefined) queryParams.append('sort', params.sort)
+
+    const queryString = queryParams.toString()
+    const endpoint = `/branches${queryString ? `?${queryString}` : ''}`
+
+    return apiRequest(endpoint, 'GET')
   },
 
   /**
    * Get branch by ID
    */
   getBranchById: async (id: number): Promise<Branch> => {
-    return apiRequest(`/branches/${id}`, 'GET');
+    return apiRequest(`/branches/${id}`, 'GET')
   },
 
   /**
    * Create new branch
    */
   createBranch: async (data: BranchCreateRequest): Promise<Branch> => {
-    return apiRequest('/branches', 'POST', data);
+    return apiRequest('/branches', 'POST', data)
   },
 
   /**
    * Update branch
    */
   updateBranch: async (id: number, data: BranchUpdateRequest): Promise<Branch> => {
-    return apiRequest(`/branches/${id}`, 'PUT', data);
+    return apiRequest(`/branches/${id}`, 'PUT', data)
   },
 
   /**
    * Delete branch
    */
   deleteBranch: async (id: number): Promise<void> => {
-    return apiRequest(`/branches/${id}`, 'DELETE');
-  },
-};
+    return apiRequest(`/branches/${id}`, 'DELETE')
+  }
+}
 
 /**
  * Asset Transfer API
@@ -1060,12 +1101,12 @@ export const assetTransferApi = {
    */
   createTransfer: async (transferData: AssetTransferRequest): Promise<AssetTransferResponse> => {
     if (!hasValidToken()) {
-      throw new Error('Authentication required. Please log in again.');
+      throw new Error('Authentication required. Please log in again.')
     }
-    
-    const response = await apiRequest('/asset-transfers', 'POST', transferData, true);
-    
-    return response;
+
+    const response = await apiRequest('/asset-transfers', 'POST', transferData, true)
+
+    return response
   },
 
   /**
@@ -1073,23 +1114,23 @@ export const assetTransferApi = {
    */
   getTransfers: async (params: AssetTransferListParams = {}): Promise<PaginatedResponse<AssetTransferResponse>> => {
     if (!hasValidToken()) {
-      throw new Error('Authentication required. Please log in again.');
+      throw new Error('Authentication required. Please log in again.')
     }
-    
+
     // Build query string from params
-    const queryParams = new URLSearchParams();
-    
-    if (params.page !== undefined) queryParams.append('page', params.page.toString());
-    if (params.size !== undefined) queryParams.append('size', params.size.toString());
-    if (params.status) queryParams.append('status', params.status);
-    if (params.assetId) queryParams.append('assetId', params.assetId.toString());
-    if (params.search) queryParams.append('search', params.search);
-    
-    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-    
-    const response = await apiRequest(`/asset-transfers${queryString}`, 'GET', null, true);
-    
-    return response;
+    const queryParams = new URLSearchParams()
+
+    if (params.page !== undefined) queryParams.append('page', params.page.toString())
+    if (params.size !== undefined) queryParams.append('size', params.size.toString())
+    if (params.status) queryParams.append('status', params.status)
+    if (params.assetId) queryParams.append('assetId', params.assetId.toString())
+    if (params.search) queryParams.append('search', params.search)
+
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : ''
+
+    const response = await apiRequest(`/asset-transfers${queryString}`, 'GET', null, true)
+
+    return response
   },
 
   /**
@@ -1097,44 +1138,46 @@ export const assetTransferApi = {
    */
   getTransferById: async (id: number): Promise<AssetTransferResponse> => {
     if (!hasValidToken()) {
-      throw new Error('Authentication required. Please log in again.');
+      throw new Error('Authentication required. Please log in again.')
     }
-    
-    const response = await apiRequest(`/asset-transfers/${id}`, 'GET', null, true);
-    
-    return response;
+
+    const response = await apiRequest(`/asset-transfers/${id}`, 'GET', null, true)
+
+    return response
   },
-  
+
   /**
    * Get user's transfer requests with pagination and filtering
    */
-  getMyTransferRequests: async (params: {
-    page?: number;
-    size?: number;
-    sort?: string;
-    status?: string;
-    startDate?: string;
-    endDate?: string;
-  } = {}): Promise<PaginatedResponse<AssetTransferResponse>> => {
+  getMyTransferRequests: async (
+    params: {
+      page?: number
+      size?: number
+      sort?: string
+      status?: string
+      startDate?: string
+      endDate?: string
+    } = {}
+  ): Promise<PaginatedResponse<AssetTransferResponse>> => {
     if (!hasValidToken()) {
-      throw new Error('Authentication required. Please log in again.');
+      throw new Error('Authentication required. Please log in again.')
     }
-    
-    const queryParams = new URLSearchParams();
-    
-    if (params.page !== undefined) queryParams.append('page', params.page.toString());
-    if (params.size !== undefined) queryParams.append('size', params.size.toString());
-    if (params.sort !== undefined) queryParams.append('sort', params.sort);
-    if (params.status !== undefined) queryParams.append('status', params.status);
-    if (params.startDate !== undefined) queryParams.append('startDate', params.startDate);
-    if (params.endDate !== undefined) queryParams.append('endDate', params.endDate);
-    
-    const queryString = queryParams.toString();
-    const endpoint = `/asset-transfers/my-requests${queryString ? `?${queryString}` : ''}`;
-    
-    const response = await apiRequest(endpoint, 'GET', null, true);
-    
-    return response;
+
+    const queryParams = new URLSearchParams()
+
+    if (params.page !== undefined) queryParams.append('page', params.page.toString())
+    if (params.size !== undefined) queryParams.append('size', params.size.toString())
+    if (params.sort !== undefined) queryParams.append('sort', params.sort)
+    if (params.status !== undefined) queryParams.append('status', params.status)
+    if (params.startDate !== undefined) queryParams.append('startDate', params.startDate)
+    if (params.endDate !== undefined) queryParams.append('endDate', params.endDate)
+
+    const queryString = queryParams.toString()
+    const endpoint = `/asset-transfers/my-requests${queryString ? `?${queryString}` : ''}`
+
+    const response = await apiRequest(endpoint, 'GET', null, true)
+
+    return response
   },
 
   /**
@@ -1142,17 +1185,17 @@ export const assetTransferApi = {
    */
   approveTransfer: async (id: number, notes: string = ''): Promise<AssetTransferResponse> => {
     if (!hasValidToken()) {
-      throw new Error('Authentication required. Please log in again.');
+      throw new Error('Authentication required. Please log in again.')
     }
-    
+
     const payload = {
       status: 'APPROVED',
       notes
-    };
-    
-    const response = await apiRequest(`/asset-transfers/${id}/status`, 'PUT', payload, true);
-    
-    return response;
+    }
+
+    const response = await apiRequest(`/asset-transfers/${id}/status`, 'PUT', payload, true)
+
+    return response
   },
 
   /**
@@ -1160,17 +1203,17 @@ export const assetTransferApi = {
    */
   rejectTransfer: async (id: number, notes: string): Promise<AssetTransferResponse> => {
     if (!hasValidToken()) {
-      throw new Error('Authentication required. Please log in again.');
+      throw new Error('Authentication required. Please log in again.')
     }
-    
+
     const payload = {
       status: 'REJECTED',
       notes
-    };
-    
-    const response = await apiRequest(`/asset-transfers/${id}/status`, 'PUT', payload, true);
-    
-    return response;
+    }
+
+    const response = await apiRequest(`/asset-transfers/${id}/status`, 'PUT', payload, true)
+
+    return response
   },
 
   /**
@@ -1178,17 +1221,17 @@ export const assetTransferApi = {
    */
   completeTransfer: async (id: number, notes: string = ''): Promise<AssetTransferResponse> => {
     if (!hasValidToken()) {
-      throw new Error('Authentication required. Please log in again.');
+      throw new Error('Authentication required. Please log in again.')
     }
-    
+
     const payload = {
       status: 'COMPLETED',
       notes
-    };
-    
-    const response = await apiRequest(`/asset-transfers/${id}/status`, 'PUT', payload, true);
-    
-    return response;
+    }
+
+    const response = await apiRequest(`/asset-transfers/${id}/status`, 'PUT', payload, true)
+
+    return response
   },
 
   /**
@@ -1196,16 +1239,16 @@ export const assetTransferApi = {
    */
   cancelTransfer: async (id: number, notes: string = ''): Promise<AssetTransferResponse> => {
     if (!hasValidToken()) {
-      throw new Error('Authentication required. Please log in again.');
+      throw new Error('Authentication required. Please log in again.')
     }
-    
+
     const payload = {
       status: 'CANCELLED',
       notes
-    };
-    
-    const response = await apiRequest(`/asset-transfers/${id}/status`, 'PUT', payload, true);
-    
-    return response;
-  },
-};
+    }
+
+    const response = await apiRequest(`/asset-transfers/${id}/status`, 'PUT', payload, true)
+
+    return response
+  }
+}
